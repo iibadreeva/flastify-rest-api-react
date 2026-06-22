@@ -729,7 +729,134 @@ a {
   margin: 0 0 28px;
 }
 
+/* ---------- Modal / form ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(28, 24, 19, 0.45);
+  backdrop-filter: blur(3px);
+  animation: fade 0.2s ease both;
+}
+.modal__dialog {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 60px -20px rgba(28, 24, 19, 0.5);
+  padding: 28px;
+  animation: rise 0.25s ease both;
+}
+.modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.modal__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.modal__close {
+  border: none;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.2s ease;
+}
+.modal__close:hover {
+  color: var(--accent);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+.field__req {
+  color: var(--accent);
+}
+.field__input {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.field__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200, 67, 31, 0.12);
+}
+.field__input::placeholder {
+  color: var(--ink-faint);
+}
+.field__input--area {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.5;
+}
+select.field__input {
+  cursor: pointer;
+  appearance: none;
+}
+
+.form__error {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: var(--accent-deep);
+  background: rgba(200, 67, 31, 0.08);
+  border: 1px solid rgba(200, 67, 31, 0.25);
+  border-radius: var(--radius);
+}
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ---------- Animations ---------- */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes rise {
   from {
     opacity: 0;

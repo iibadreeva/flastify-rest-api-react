@@ -1,25 +1,27 @@
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useApi, apiPost, apiDelete } from '../api.js'
 import { PageHead, Initials } from '../components/ui.jsx'
 import { Loader, ErrorState, EmptyState } from '../components/states.jsx'
+import FormModal from '../components/FormModal.jsx'
+
+const userFields = [
+  { name: 'fullName', label: 'Полное имя', type: 'text', placeholder: 'Иван Иванов' },
+  { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'name@example.com' },
+]
 
 export default function Users() {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '1', 10)
   const { data, error, loading } = useApi(`/users?page=${page}`)
+  const [creating, setCreating] = useState(false)
 
-  const handleCreate = async () => {
-    const fullName = prompt('Введите полное имя:')
-    if (!fullName) return
-    const email = prompt('Введите email:')
-    if (!email) return
+  const handleCreate = async ({ fullName, email }) => {
+    const body = { email }
+    if (fullName) body.fullName = fullName
 
-    try {
-      await apiPost('/users', { fullName, email })
-      window.location.reload()
-    } catch (err) {
-      alert('Ошибка при создании: ' + err.message)
-    }
+    await apiPost('/users', body)
+    window.location.reload()
   }
 
   const handleDelete = async (e, id) => {
@@ -49,7 +51,7 @@ export default function Users() {
           lead="Авторы и студенты платформы."
           count={data.length}
         />
-        <button onClick={handleCreate} className="btn btn--primary" style={{ marginTop: '20px' }}>
+        <button onClick={() => setCreating(true)} className="btn btn--primary" style={{ marginTop: '20px' }}>
           Добавить участника
         </button>
       </div>
@@ -103,6 +105,15 @@ export default function Users() {
           </div>
         </>
       )}
+
+      <FormModal
+        open={creating}
+        title="Новый участник"
+        submitLabel="Создать"
+        fields={userFields}
+        onClose={() => setCreating(false)}
+        onSubmit={handleCreate}
+      />
     </div>
   )
 }

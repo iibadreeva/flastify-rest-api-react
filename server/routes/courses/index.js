@@ -4,6 +4,13 @@ import { courses, courseLessons } from '../../db/schema.js'
 
 const perPage = 2
 
+// Допустимые поля курса (используются в схемах create/update).
+const courseProperties = {
+    name: { type: 'string', minLength: 1 },
+    description: { type: 'string', minLength: 1 },
+    creatorId: { type: 'integer', minimum: 1 },
+}
+
 const listQuerystring = {
     type: 'object',
     properties: {
@@ -17,6 +24,20 @@ const idParams = {
     properties: {
         id: { type: 'integer' },
     },
+}
+
+const createBody = {
+    type: 'object',
+    required: ['name', 'description', 'creatorId'],
+    additionalProperties: false,
+    properties: courseProperties,
+}
+
+const updateBody = {
+    type: 'object',
+    additionalProperties: false,
+    minProperties: 1,
+    properties: courseProperties,
 }
 
 export default async function (fastify) {
@@ -55,6 +76,54 @@ export default async function (fastify) {
                 .all()
 
             return { ...course, lessons }
+        },
+    )
+
+    // POST /courses — создание
+    fastify.post(
+        '/',
+        { schema: { body: createBody } },
+        async (request, reply) => {
+            const [course] = await fastify.db.insert(courses)
+                .values(request.body)
+                .returning()
+
+            return reply.code(201).send(course)
+        },
+    )
+
+    // PATCH /courses/:id — обновление
+    fastify.patch(
+        '/:id',
+        { schema: { params: idParams, body: updateBody } },
+        async (request) => {
+            const { id } = request.params
+
+            const [course] = await fastify.db.update(courses)
+                .set(request.body)
+                .where(eq(courses.id, id))
+                .returning()
+
+            fastify.assert(course, 404, 'Курс не найден')
+
+            return course
+        },
+    )
+
+    // DELETE /courses/:id — удаление
+    fastify.delete(
+        '/:id',
+        { schema: { params: idParams } },
+        async (request, reply) => {
+            const { id } = request.params
+
+            const [course] = await fastify.db.delete(courses)
+                .where(eq(courses.id, id))
+                .returning()
+
+            fastify.assert(course, 404, 'Курс не найден')
+
+            return reply.code(204).send()
         },
     )
 }

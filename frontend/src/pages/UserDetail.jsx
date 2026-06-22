@@ -1,25 +1,28 @@
+import { useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useApi, apiPatch, apiDelete } from '../api.js'
 import { BackLink, Initials } from '../components/ui.jsx'
 import { Loader, ErrorState } from '../components/states.jsx'
+import FormModal from '../components/FormModal.jsx'
+
+const userFields = [
+  { name: 'fullName', label: 'Полное имя', type: 'text', placeholder: 'Иван Иванов' },
+  { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'name@example.com' },
+]
 
 export default function UserDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data, error, loading } = useApi(`/users/${id}`)
+  const [editing, setEditing] = useState(false)
 
-  const handleEdit = async () => {
-    const fullName = prompt('Новое полное имя:', data.fullName)
-    if (fullName === null) return
-    const email = prompt('Новый email:', data.email)
-    if (email === null) return
+  const handleEdit = async ({ fullName, email }) => {
+    const body = {}
+    if (fullName) body.fullName = fullName
+    if (email) body.email = email
 
-    try {
-      await apiPatch(`/users/${id}`, { fullName, email })
-      window.location.reload()
-    } catch (err) {
-      alert('Ошибка при обновлении: ' + err.message)
-    }
+    await apiPatch(`/users/${id}`, body)
+    window.location.reload()
   }
 
   const handleDelete = async () => {
@@ -43,7 +46,7 @@ export default function UserDetail() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <BackLink to="/users">Ко всем участникам</BackLink>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleEdit} className="btn btn--ghost" style={{ fontSize: '13px' }}>
+          <button onClick={() => setEditing(true)} className="btn btn--ghost" style={{ fontSize: '13px' }}>
             Редактировать
           </button>
           <button onClick={handleDelete} className="btn btn--ghost" style={{ fontSize: '13px', color: 'var(--accent)' }}>
@@ -88,6 +91,16 @@ export default function UserDetail() {
           </div>
         )}
       </section>
+
+      <FormModal
+        open={editing}
+        title="Редактировать участника"
+        submitLabel="Сохранить"
+        fields={userFields}
+        initialValues={{ fullName: data.fullName ?? '', email: data.email ?? '' }}
+        onClose={() => setEditing(false)}
+        onSubmit={handleEdit}
+      />
     </article>
   )
 }

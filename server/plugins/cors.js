@@ -5,5 +5,6 @@ import cors from '@fastify/cors'
 export default fp(async (fastify) => {
     fastify.register(cors, {
         origin: true,
+        methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })
 })

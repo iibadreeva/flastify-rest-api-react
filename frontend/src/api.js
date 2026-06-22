@@ -5,12 +5,13 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 export async function apiRequest(path, { method = 'GET', body } = {}) {
   const options = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: {},
   }
 
-  if (body) {
+  // Content-Type ставим только при наличии тела, иначе Fastify ругается
+  // на пустое тело при content-type: application/json (например, в DELETE).
+  if (body !== undefined) {
+    options.headers['Content-Type'] = 'application/json'
     options.body = JSON.stringify(body)
   }
 

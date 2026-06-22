@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "ccb6faf3-b675-47e4-817e-e60e6a9d63db",
+  "id": "77c87719-99b0-48d9-9d1f-91119ab46d66",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "course_lessons": {
@@ -56,7 +56,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -116,7 +116,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

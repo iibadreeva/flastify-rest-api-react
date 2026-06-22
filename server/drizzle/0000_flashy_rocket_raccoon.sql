@@ -4,7 +4,7 @@ CREATE TABLE `course_lessons` (
 	`courseId` integer NOT NULL,
 	`body` text NOT NULL,
 	`created_at` text DEFAULT (unixepoch()) NOT NULL,
-	FOREIGN KEY (`courseId`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`courseId`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `courses` (
@@ -13,7 +13,7 @@ CREATE TABLE `courses` (
 	`creator_id` integer NOT NULL,
 	`description` text NOT NULL,
 	`created_at` text DEFAULT (unixepoch()) NOT NULL,
-	FOREIGN KEY (`creator_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`creator_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
