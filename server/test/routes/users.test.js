@@ -5,6 +5,7 @@ import { build } from '../helper.js'
 // Схему импортируем, чтобы в тесте можно было писать в БД напрямую
 // (минуя HTTP-маршруты) — например, подготовить связанные данные.
 import { courses } from '../../db/schema.js'
+import {buildUser} from "../../lib/data.js";
 
 // Один общий тест с набором подтестов (t.test), проверяющий весь CRUD users.
 // Приложение поднимается один раз; БД in-memory, поэтому состояние сохраняется
@@ -18,13 +19,11 @@ test('users routes CRUD', async (t) => {
 
   await t.test('create user', async () => {
     // POST /users с валидным телом → 201 и созданный объект с id.
+    const body = buildUser()
     const res = await app.inject({
       method: 'POST',
       url: '/users',
-      payload: {
-        fullName: 'Test User',
-        email: 'test@example.com'
-      }
+      payload: body
     })
     assert.strictEqual(res.statusCode, 201)
     const payload = JSON.parse(res.payload)

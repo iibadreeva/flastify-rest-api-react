@@ -79,10 +79,10 @@ export default async function (fastify) {
         },
     )
 
-    // POST /courses — создание
+    // POST /courses — создание (только для авторизованных)
     fastify.post(
         '/',
-        { schema: { body: createBody } },
+        { schema: { body: createBody }, onRequest: [fastify.authenticate] },
         async (request, reply) => {
             const [course] = await fastify.db.insert(courses)
                 .values(request.body)
@@ -92,10 +92,10 @@ export default async function (fastify) {
         },
     )
 
-    // PATCH /courses/:id — обновление
+    // PATCH /courses/:id — обновление (только для авторизованных)
     fastify.patch(
         '/:id',
-        { schema: { params: idParams, body: updateBody } },
+        { schema: { params: idParams, body: updateBody }, onRequest: [fastify.authenticate] },
         async (request) => {
             const { id } = request.params
 
@@ -110,10 +110,10 @@ export default async function (fastify) {
         },
     )
 
-    // DELETE /courses/:id — удаление
+    // DELETE /courses/:id — удаление (только для авторизованных)
     fastify.delete(
         '/:id',
-        { schema: { params: idParams } },
+        { schema: { params: idParams }, onRequest: [fastify.authenticate] },
         async (request, reply) => {
             const { id } = request.params
 

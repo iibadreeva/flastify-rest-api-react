@@ -12,6 +12,20 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const AppPath = path.join(__dirname, '..', 'app.js')
 
+function serverConfig() {
+  return {
+    logger: {
+      level: 'error',
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+        },
+      },
+    },
+  }
+}
+
 // Конфиг, с которым приложение поднимается именно в тестах.
 function config () {
   return {
@@ -30,7 +44,7 @@ async function build (t) {
   const argv = [AppPath]
 
   // Собираем инстанс Fastify (плагины + маршруты загружаются автозагрузкой).
-  const app = await helper.build(argv, config())
+  const app = await helper.build(argv, config(), serverConfig())
 
   // t.after выполнится по завершении теста — закрываем сервер,
   // чтобы освободить ресурсы (соединение с БД и т.д.).

@@ -58,7 +58,9 @@ export default async function (fastify) {
     // GET /users/:id — пользователь вместе с его курсами
     fastify.get(
         '/:id',
-        { schema: { params: idParams } },
+        {
+            schema: { params: idParams },
+        },
         async (request) => {
             const { id } = request.params
 
@@ -78,10 +80,13 @@ export default async function (fastify) {
         },
     )
 
-    // POST /users — создание
+    // POST /users — создание (только для авторизованных)
     fastify.post(
         '/',
-        { schema: { body: createBody } },
+        {
+            schema: { body: createBody },
+            onRequest: [fastify.authenticate]
+        },
         async (request, reply) => {
             const [user] = await fastify.db.insert(users)
                 .values(request.body)
@@ -91,10 +96,10 @@ export default async function (fastify) {
         },
     )
 
-    // PATCH /users/:id — обновление
+    // PATCH /users/:id — обновление (только для авторизованных)
     fastify.patch(
         '/:id',
-        { schema: { params: idParams, body: updateBody } },
+        { schema: { params: idParams, body: updateBody }, onRequest: [fastify.authenticate] },
         async (request) => {
             const { id } = request.params
 
@@ -109,10 +114,10 @@ export default async function (fastify) {
         },
     )
 
-    // DELETE /users/:id — удаление
+    // DELETE /users/:id — удаление (только для авторизованных)
     fastify.delete(
         '/:id',
-        { schema: { params: idParams } },
+        { schema: { params: idParams }, onRequest: [fastify.authenticate] },
         async (request, reply) => {
             const { id } = request.params
 
