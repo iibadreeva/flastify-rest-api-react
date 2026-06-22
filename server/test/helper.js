@@ -1,33 +1,39 @@
-// This file contains code that we reuse
-// between our tests.
+// Общий хелпер для тестов: собирает экземпляр приложения и корректно его
+// останавливает после каждого теста. Переиспользуется во всех *.test.js,
+// чтобы не дублировать логику запуска.
 
 import helper from 'fastify-cli/helper.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// В ESM нет __dirname — восстанавливаем его из import.meta.url,
+// чтобы построить абсолютный путь до app.js независимо от текущей папки.
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const AppPath = path.join(__dirname, '..', 'app.js')
 
-// Fill in this config with all the configurations
-// needed for testing the application
+// Конфиг, с которым приложение поднимается именно в тестах.
 function config () {
   return {
-    skipOverride: true // Register our application with fastify-plugin
+    // skipOverride: true заставляет fastify-plugin НЕ инкапсулировать плагины,
+    // поэтому декораторы (например, fastify.db) видны снаружи — это нужно,
+    // чтобы в тестах можно было обращаться к app.db напрямую.
+    skipOverride: true
   }
 }
 
-// automatically build and tear down our instance
+// Поднимает приложение через хелпер fastify-cli и регистрирует автоматическую
+// остановку. Принимает t (контекст теста node:test) для хука очистки.
 async function build (t) {
-  // you can set all the options supported by the fastify CLI command
+  // helper.build принимает argv в том же формате, что и CLI-команда
+  // `fastify start`. Передаём только путь до приложения.
   const argv = [AppPath]
 
-  // fastify-plugin ensures that all decorators
-  // are exposed for testing purposes, this is
-  // different from the production setup
+  // Собираем инстанс Fastify (плагины + маршруты загружаются автозагрузкой).
   const app = await helper.build(argv, config())
 
-  // tear down our app after we are done
+  // t.after выполнится по завершении теста — закрываем сервер,
+  // чтобы освободить ресурсы (соединение с БД и т.д.).
   t.after(() => app.close())
 
   return app
