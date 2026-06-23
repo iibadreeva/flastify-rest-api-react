@@ -44,7 +44,7 @@ export default async function (fastify) {
     // GET /lessons?page=2 — список с пагинацией
     fastify.get(
         '/',
-        { schema: { querystring: listQuerystring } },
+        { schema: { tags: ['lessons'], querystring: listQuerystring } },
         async (request) => {
             const { page } = request.query
 
@@ -59,7 +59,7 @@ export default async function (fastify) {
     // GET /lessons/:id
     fastify.get(
         '/:id',
-        { schema: { params: idParams } },
+        { schema: { tags: ['lessons'], params: idParams } },
         async (request) => {
             const { id } = request.params
 
@@ -76,7 +76,10 @@ export default async function (fastify) {
     // POST /lessons — создание (только для авторизованных)
     fastify.post(
         '/',
-        { schema: { body: createBody }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['lessons'], body: createBody, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request, reply) => {
             const [lesson] = await fastify.db.insert(courseLessons)
                 .values(request.body)
@@ -89,7 +92,10 @@ export default async function (fastify) {
     // PATCH /lessons/:id — обновление (только для авторизованных)
     fastify.patch(
         '/:id',
-        { schema: { params: idParams, body: updateBody }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['lessons'], params: idParams, body: updateBody, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request) => {
             const { id } = request.params
 
@@ -107,7 +113,10 @@ export default async function (fastify) {
     // DELETE /lessons/:id — удаление (только для авторизованных)
     fastify.delete(
         '/:id',
-        { schema: { params: idParams }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['lessons'], params: idParams, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request, reply) => {
             const { id } = request.params
 

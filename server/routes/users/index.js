@@ -43,7 +43,7 @@ export default async function (fastify) {
     // GET /users?page=2 — список с пагинацией
     fastify.get(
         '/',
-        { schema: { querystring: listQuerystring } },
+        { schema: { tags: ['users'], querystring: listQuerystring } },
         async (request) => {
             const { page } = request.query
 
@@ -59,7 +59,7 @@ export default async function (fastify) {
     fastify.get(
         '/:id',
         {
-            schema: { params: idParams },
+            schema: { tags: ['users'], params: idParams },
         },
         async (request) => {
             const { id } = request.params
@@ -84,7 +84,7 @@ export default async function (fastify) {
     fastify.post(
         '/',
         {
-            schema: { body: createBody },
+            schema: { tags: ['users'], body: createBody, security: [{ bearerAuth: [] }] },
             onRequest: [fastify.authenticate]
         },
         async (request, reply) => {
@@ -99,7 +99,10 @@ export default async function (fastify) {
     // PATCH /users/:id — обновление (только для авторизованных)
     fastify.patch(
         '/:id',
-        { schema: { params: idParams, body: updateBody }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['users'], params: idParams, body: updateBody, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request) => {
             const { id } = request.params
 
@@ -117,7 +120,10 @@ export default async function (fastify) {
     // DELETE /users/:id — удаление (только для авторизованных)
     fastify.delete(
         '/:id',
-        { schema: { params: idParams }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['users'], params: idParams, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request, reply) => {
             const { id } = request.params
 

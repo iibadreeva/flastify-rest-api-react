@@ -44,7 +44,7 @@ export default async function (fastify) {
     // GET /courses?page=2 — список с пагинацией
     fastify.get(
         '/',
-        { schema: { querystring: listQuerystring } },
+        { schema: { tags: ['courses'], querystring: listQuerystring } },
         async (request) => {
             const { page } = request.query
 
@@ -59,7 +59,7 @@ export default async function (fastify) {
     // GET /courses/:id — курс вместе с уроками
     fastify.get(
         '/:id',
-        { schema: { params: idParams } },
+        { schema: { tags: ['courses'], params: idParams } },
         async (request) => {
             const { id } = request.params
 
@@ -82,7 +82,10 @@ export default async function (fastify) {
     // POST /courses — создание (только для авторизованных)
     fastify.post(
         '/',
-        { schema: { body: createBody }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['courses'], body: createBody, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request, reply) => {
             const [course] = await fastify.db.insert(courses)
                 .values(request.body)
@@ -95,7 +98,10 @@ export default async function (fastify) {
     // PATCH /courses/:id — обновление (только для авторизованных)
     fastify.patch(
         '/:id',
-        { schema: { params: idParams, body: updateBody }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['courses'], params: idParams, body: updateBody, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request) => {
             const { id } = request.params
 
@@ -113,7 +119,10 @@ export default async function (fastify) {
     // DELETE /courses/:id — удаление (только для авторизованных)
     fastify.delete(
         '/:id',
-        { schema: { params: idParams }, onRequest: [fastify.authenticate] },
+        {
+            schema: { tags: ['courses'], params: idParams, security: [{ bearerAuth: [] }] },
+            onRequest: [fastify.authenticate],
+        },
         async (request, reply) => {
             const { id } = request.params
 
