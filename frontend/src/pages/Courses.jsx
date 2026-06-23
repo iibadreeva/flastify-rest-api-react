@@ -4,6 +4,7 @@ import { useApi, apiPost, apiDelete } from '../api.js'
 import { PageHead } from '../components/ui.jsx'
 import { Loader, ErrorState, EmptyState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
+import Pagination from '../components/Pagination.jsx'
 
 const courseFields = [
   { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название курса' },
@@ -13,7 +14,7 @@ const courseFields = [
 export default function Courses() {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '1', 10)
-  const { data, error, loading } = useApi(`/courses?page=${page}`)
+  const { data: result, error, loading } = useApi(`/courses?page=${page}`)
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async (values) => {
@@ -41,7 +42,10 @@ export default function Courses() {
   if (loading) return <Loader />
   if (error) return <ErrorState error={error} />
 
-  const hasMore = data?.length === 2 // perPage на сервере = 2
+  const courses = result?.data ?? []
+  const meta = result?.meta
+  // Число страниц считаем из метаданных списка (total / perPage).
+  const totalPages = meta ? Math.ceil(meta.total / meta.perPage) : 1
 
   return (
     <div>
@@ -50,19 +54,19 @@ export default function Courses() {
           eyebrow="Каталог"
           title="Курсы"
           lead="Программы обучения, созданные участниками платформы."
-          count={data.length}
+          count={meta?.total ?? courses.length}
         />
         <button onClick={() => setCreating(true)} className="btn btn--primary" style={{ marginTop: '20px' }}>
           Добавить курс
         </button>
       </div>
 
-      {!data?.length && page === 1 ? (
+      {!courses.length && page === 1 ? (
         <EmptyState label="Курсов пока нет" />
       ) : (
         <>
           <div className="cards">
-            {data.map((course) => (
+            {courses.map((course) => (
               <Link key={course.id} to={`/courses/${course.id}`} className="card">
                 <span className="card__tag">Курс №{course.id}</span>
                 <h2 className="card__title">{course.name}</h2>
@@ -81,25 +85,11 @@ export default function Courses() {
             ))}
           </div>
 
-          <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <button
-              disabled={page <= 1}
-              onClick={() => setSearchParams({ page: page - 1 })}
-              className="btn btn--ghost"
-            >
-              ← Назад
-            </button>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
-              Страница {page}
-            </span>
-            <button
-              disabled={!hasMore}
-              onClick={() => setSearchParams({ page: page + 1 })}
-              className="btn btn--ghost"
-            >
-              Вперед →
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => setSearchParams({ page: p })}
+          />
         </>
       )}
 

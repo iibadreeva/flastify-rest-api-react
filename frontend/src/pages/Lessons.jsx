@@ -4,11 +4,12 @@ import { useApi, useAllItems, apiPost, apiDelete } from '../api.js'
 import { PageHead } from '../components/ui.jsx'
 import { Loader, ErrorState, EmptyState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
+import Pagination from '../components/Pagination.jsx'
 
 export default function Lessons() {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '1', 10)
-  const { data, error, loading } = useApi(`/lessons?page=${page}`)
+  const { data: result, error, loading } = useApi(`/lessons?page=${page}`)
   const courses = useAllItems('/courses')
   const [creating, setCreating] = useState(false)
 
@@ -52,7 +53,10 @@ export default function Lessons() {
   if (loading) return <Loader />
   if (error) return <ErrorState error={error} />
 
-  const hasMore = data?.length === 2 // perPage на сервере = 2
+  const lessons = result?.data ?? []
+  const meta = result?.meta
+  // Число страниц считаем из метаданных списка (total / perPage).
+  const totalPages = meta ? Math.ceil(meta.total / meta.perPage) : 1
 
   return (
     <div>
@@ -61,19 +65,19 @@ export default function Lessons() {
           eyebrow="Материалы"
           title="Уроки"
           lead="Отдельные материалы, входящие в курсы."
-          count={data.length}
+          count={meta?.total ?? lessons.length}
         />
         <button onClick={() => setCreating(true)} className="btn btn--primary" style={{ marginTop: '20px' }}>
           Добавить урок
         </button>
       </div>
 
-      {!data?.length && page === 1 ? (
+      {!lessons.length && page === 1 ? (
         <EmptyState label="Уроков пока нет" />
       ) : (
         <>
           <ul className="lessons">
-            {data.map((lesson) => (
+            {lessons.map((lesson) => (
               <li key={lesson.id}>
                 <Link to={`/lessons/${lesson.id}`} className="lesson">
                   <span className="lesson__num">
@@ -95,25 +99,11 @@ export default function Lessons() {
             ))}
           </ul>
 
-          <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <button
-              disabled={page <= 1}
-              onClick={() => setSearchParams({ page: page - 1 })}
-              className="btn btn--ghost"
-            >
-              ← Назад
-            </button>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
-              Страница {page}
-            </span>
-            <button
-              disabled={!hasMore}
-              onClick={() => setSearchParams({ page: page + 1 })}
-              className="btn btn--ghost"
-            >
-              Вперед →
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => setSearchParams({ page: p })}
+          />
         </>
       )}
 

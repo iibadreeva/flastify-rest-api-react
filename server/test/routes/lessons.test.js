@@ -7,13 +7,17 @@ test('lessons routes', async (t) => {
   const app = await build(t)
 
   await t.test('get all lessons', async () => {
-    // GET /lessons → 200 и массив.
+    // GET /lessons → 200, объект { data, meta }.
     const res = await app.inject({
       url: '/lessons'
     })
     assert.strictEqual(res.statusCode, 200)
     const payload = JSON.parse(res.payload)
-    assert.ok(Array.isArray(payload))
+    assert.ok(Array.isArray(payload.data))
+    // Метаданные пагинации: текущая страница, размер страницы, всего элементов.
+    assert.strictEqual(payload.meta.page, 1)
+    assert.strictEqual(typeof payload.meta.perPage, 'number')
+    assert.strictEqual(typeof payload.meta.total, 'number')
   })
 
   await t.test('get lesson by id', async () => {
@@ -21,7 +25,7 @@ test('lessons routes', async (t) => {
     const allLessonsRes = await app.inject({
       url: '/lessons'
     })
-    const allLessons = JSON.parse(allLessonsRes.payload)
+    const allLessons = JSON.parse(allLessonsRes.payload).data
 
     if (allLessons.length > 0) {
       const lessonId = allLessons[0].id

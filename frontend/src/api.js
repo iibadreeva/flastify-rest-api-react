@@ -103,10 +103,11 @@ export function logout() {
 }
 
 /**
- * Загружает ВСЕ записи постранично (на сервере perPage = 2) и возвращает
- * единый массив. Нужен, например, для выпадающих списков.
+ * Загружает ВСЕ записи постранично и возвращает единый массив.
+ * Списочные маршруты отдают { data, meta: { page, perPage, total } },
+ * поэтому ориентируемся на meta.total. Нужен, например, для селектов.
  */
-export function useAllItems(basePath, perPage = 2) {
+export function useAllItems(basePath) {
   const [items, setItems] = useState([])
 
   useEffect(() => {
@@ -117,10 +118,14 @@ export function useAllItems(basePath, perPage = 2) {
       // Ограничиваем число итераций на случай нестандартного ответа сервера.
       for (let page = 1; page <= 200; page += 1) {
         const sep = basePath.includes('?') ? '&' : '?'
-        const batch = await apiGet(`${basePath}${sep}page=${page}`)
-        if (!Array.isArray(batch) || batch.length === 0) break
+        const res = await apiGet(`${basePath}${sep}page=${page}`)
+        const batch = res?.data ?? []
+        if (batch.length === 0) break
         all.push(...batch)
-        if (batch.length < perPage) break
+
+        const meta = res?.meta
+        if (meta && all.length >= meta.total) break
+        if (meta && batch.length < meta.perPage) break
       }
       if (active) setItems(all)
     })().catch(() => {
@@ -130,7 +135,7 @@ export function useAllItems(basePath, perPage = 2) {
     return () => {
       active = false
     }
-  }, [basePath, perPage])
+  }, [basePath])
 
   return items
 }

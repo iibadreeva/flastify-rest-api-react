@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, count } from 'drizzle-orm'
 
 import { courses, courseLessons } from '../../db/schema.js'
 
@@ -49,11 +49,20 @@ export default async function (fastify) {
         async (request) => {
             const { page } = request.query
 
-            return fastify.db.query.courses.findMany({
+            // Сами элементы текущей страницы (limit/offset = пагинация).
+            const data = await fastify.db.query.courses.findMany({
                 orderBy: asc(courses.id),
                 limit: perPage,
                 offset: (page - 1) * perPage,
             })
+
+            // Общее количество записей в таблице — для метаданных пагинации.
+            const [{ total }] = await fastify.db
+                .select({ total: count() })
+                .from(courses)
+
+            // meta: текущая страница, размер страницы и всего элементов.
+            return { data, meta: { page, perPage, total } }
         },
     )
 

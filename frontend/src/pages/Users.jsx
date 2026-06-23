@@ -4,6 +4,7 @@ import { useApi, apiPost, apiDelete } from '../api.js'
 import { PageHead, Initials } from '../components/ui.jsx'
 import { Loader, ErrorState, EmptyState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
+import Pagination from '../components/Pagination.jsx'
 
 const userFields = [
   { name: 'fullName', label: 'Полное имя', type: 'text', placeholder: 'Иван Иванов' },
@@ -13,7 +14,7 @@ const userFields = [
 export default function Users() {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '1', 10)
-  const { data, error, loading } = useApi(`/users?page=${page}`)
+  const { data: result, error, loading } = useApi(`/users?page=${page}`)
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async ({ fullName, email }) => {
@@ -40,7 +41,10 @@ export default function Users() {
   if (loading) return <Loader />
   if (error) return <ErrorState error={error} />
 
-  const hasMore = data?.length === 2 // perPage на сервере = 2
+  const users = result?.data ?? []
+  const meta = result?.meta
+  // Число страниц считаем из метаданных списка (total / perPage).
+  const totalPages = meta ? Math.ceil(meta.total / meta.perPage) : 1
 
   return (
     <div>
@@ -49,19 +53,19 @@ export default function Users() {
           eyebrow="Сообщество"
           title="Участники"
           lead="Авторы и студенты платформы."
-          count={data.length}
+          count={meta?.total ?? users.length}
         />
         <button onClick={() => setCreating(true)} className="btn btn--primary" style={{ marginTop: '20px' }}>
           Добавить участника
         </button>
       </div>
 
-      {!data?.length && page === 1 ? (
+      {!users.length && page === 1 ? (
         <EmptyState label="Участников пока нет" />
       ) : (
         <>
           <ul className="people">
-            {data.map((user) => (
+            {users.map((user) => (
               <li key={user.id}>
                 <Link to={`/users/${user.id}`} className="person">
                   <Initials name={user.fullName} />
@@ -84,25 +88,11 @@ export default function Users() {
             ))}
           </ul>
 
-          <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <button
-              disabled={page <= 1}
-              onClick={() => setSearchParams({ page: page - 1 })}
-              className="btn btn--ghost"
-            >
-              ← Назад
-            </button>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
-              Страница {page}
-            </span>
-            <button
-              disabled={!hasMore}
-              onClick={() => setSearchParams({ page: page + 1 })}
-              className="btn btn--ghost"
-            >
-              Вперед →
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => setSearchParams({ page: p })}
+          />
         </>
       )}
 

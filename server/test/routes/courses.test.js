@@ -8,13 +8,17 @@ test('courses routes', async (t) => {
   const app = await build(t)
 
   await t.test('get all courses', async () => {
-    // GET /courses → 200 и массив (даже если пустой).
+    // GET /courses → 200, объект { data, meta }.
     const res = await app.inject({
       url: '/courses'
     })
     assert.strictEqual(res.statusCode, 200)
     const payload = JSON.parse(res.payload)
-    assert.ok(Array.isArray(payload))
+    assert.ok(Array.isArray(payload.data))
+    // Метаданные пагинации: текущая страница, размер страницы, всего элементов.
+    assert.strictEqual(payload.meta.page, 1)
+    assert.strictEqual(typeof payload.meta.perPage, 'number')
+    assert.strictEqual(typeof payload.meta.total, 'number')
   })
 
   await t.test('get course by id', async () => {
@@ -23,7 +27,7 @@ test('courses routes', async (t) => {
     const allCoursesRes = await app.inject({
       url: '/courses'
     })
-    const allCourses = JSON.parse(allCoursesRes.payload)
+    const allCourses = JSON.parse(allCoursesRes.payload).data
 
     // Проверяем детальный маршрут только если есть хотя бы один курс.
     if (allCourses.length > 0) {
