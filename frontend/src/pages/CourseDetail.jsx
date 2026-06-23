@@ -4,6 +4,7 @@ import { useApi, apiPatch, apiDelete } from '../api.js'
 import { BackLink } from '../components/ui.jsx'
 import { Loader, ErrorState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
+import Pagination from '../components/Pagination.jsx'
 
 const courseFields = [
   { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название курса' },
@@ -15,6 +16,9 @@ export default function CourseDetail() {
   const navigate = useNavigate()
   const { data, error, loading } = useApi(`/courses/${id}`)
   const [editing, setEditing] = useState(false)
+  // Уроки тянем через вложенный ресурс /courses/:id/lessons со своей пагинацией.
+  const [lessonsPage, setLessonsPage] = useState(1)
+  const { data: lessonsResult } = useApi(`/courses/${id}/lessons?page=${lessonsPage}`)
 
   const handleEdit = async (values) => {
     await apiPatch(`/courses/${id}`, {
@@ -38,7 +42,16 @@ export default function CourseDetail() {
   if (loading) return <Loader />
   if (error) return <ErrorState error={error} />
 
-  const lessons = data.lessons ?? []
+  const lessons = lessonsResult?.data ?? []
+  const lessonsMeta = lessonsResult?.meta
+  const totalLessons = lessonsMeta?.total ?? lessons.length
+  const totalLessonPages = lessonsMeta
+    ? Math.ceil(lessonsMeta.total / lessonsMeta.perPage)
+    : 1
+  // Сквозная нумерация уроков с учётом текущей страницы.
+  const lessonOffset = lessonsMeta
+    ? (lessonsPage - 1) * lessonsMeta.perPage
+    : 0
 
   return (
     <article className="detail">
@@ -68,28 +81,36 @@ export default function CourseDetail() {
 
       <section className="detail__section">
         <h2 className="detail__heading">
-          Уроки курса <span className="detail__count">{lessons.length}</span>
+          Уроки курса <span className="detail__count">{totalLessons}</span>
         </h2>
 
         {lessons.length === 0 ? (
           <p className="detail__muted">В этом курсе пока нет уроков.</p>
         ) : (
-          <ol className="syllabus">
-            {lessons.map((lesson, i) => (
-              <li key={lesson.id}>
-                <Link to={`/lessons/${lesson.id}`} className="syllabus__item">
-                  <span className="syllabus__num">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="syllabus__body">
-                    <span className="syllabus__title">{lesson.name}</span>
-                    <span className="syllabus__excerpt">{lesson.body}</span>
-                  </span>
-                  <span className="syllabus__arrow">→</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
+          <>
+            <ol className="syllabus">
+              {lessons.map((lesson, i) => (
+                <li key={lesson.id}>
+                  <Link to={`/lessons/${lesson.id}`} className="syllabus__item">
+                    <span className="syllabus__num">
+                      {String(lessonOffset + i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="syllabus__body">
+                      <span className="syllabus__title">{lesson.name}</span>
+                      <span className="syllabus__excerpt">{lesson.body}</span>
+                    </span>
+                    <span className="syllabus__arrow">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+
+            <Pagination
+              page={lessonsPage}
+              totalPages={totalLessonPages}
+              onChange={setLessonsPage}
+            />
+          </>
         )}
       </section>
 

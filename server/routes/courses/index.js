@@ -2,7 +2,7 @@ import { asc, eq, count } from 'drizzle-orm'
 
 import { courses, courseLessons } from '../../db/schema.js'
 
-const perPage = 5
+const perPage = 3
 
 // Допустимые поля курса (используются в схемах create/update).
 // creatorId здесь не указываем: автор проставляется автоматически из токена
@@ -86,6 +86,41 @@ export default async function (fastify) {
                 .all()
 
             return { ...course, lessons }
+        },
+    )
+
+    // GET /courses/:id/lessons — уроки конкретного курса (вложенный ресурс).
+    // Уроки существуют только в контексте курса, поэтому доступны по
+    // вложенному URL. Формат ответа такой же, как у остальных списков.
+    fastify.get(
+        '/:id/lessons',
+        { schema: { tags: ['courses'], params: idParams, querystring: listQuerystring } },
+        async (request) => {
+            const { id } = request.params
+            const { page } = request.query
+
+            // Родительский курс должен существовать — иначе вложенный
+            // ресурс не имеет смысла (404).
+            const course = await fastify.db.query.courses.findFirst({
+                where: eq(courses.id, id),
+            })
+            fastify.assert(course, 404, 'Курс не найден')
+
+            // Уроки текущей страницы, принадлежащие этому курсу.
+            const data = await fastify.db.query.courseLessons.findMany({
+                where: eq(courseLessons.courseId, id),
+                orderBy: asc(courseLessons.id),
+                limit: perPage,
+                offset: (page - 1) * perPage,
+            })
+
+            // Всего уроков у курса — для метаданных пагинации.
+            const [{ total }] = await fastify.db
+                .select({ total: count() })
+                .from(courseLessons)
+                .where(eq(courseLessons.courseId, id))
+
+            return { data, meta: { page, perPage, total } }
         },
     )
 

@@ -51,4 +51,38 @@ test('courses routes', async (t) => {
     })
     assert.strictEqual(res.statusCode, 404)
   })
+
+  await t.test('get nested lessons of a course', async () => {
+    // Берём существующий курс из списка.
+    const allCoursesRes = await app.inject({
+      url: '/courses'
+    })
+    const allCourses = JSON.parse(allCoursesRes.payload).data
+
+    if (allCourses.length > 0) {
+      const courseId = allCourses[0].id
+
+      // GET /courses/:id/lessons → 200, объект { data, meta }.
+      const res = await app.inject({
+        url: `/courses/${courseId}/lessons`
+      })
+      assert.strictEqual(res.statusCode, 200)
+      const payload = JSON.parse(res.payload)
+      assert.ok(Array.isArray(payload.data))
+      assert.strictEqual(payload.meta.page, 1)
+      assert.strictEqual(typeof payload.meta.total, 'number')
+      // Все вернувшиеся уроки принадлежат запрошенному курсу.
+      for (const lesson of payload.data) {
+        assert.strictEqual(lesson.courseId, courseId)
+      }
+    }
+  })
+
+  await t.test('get nested lessons of non-existent course', async () => {
+    // Вложенный ресурс несуществующего курса → 404.
+    const res = await app.inject({
+      url: '/courses/999999/lessons'
+    })
+    assert.strictEqual(res.statusCode, 404)
+  })
 })
