@@ -1,6 +1,6 @@
 import { asc, eq } from 'drizzle-orm'
 
-import { courseLessons } from '../../db/schema.js'
+import { courses, courseLessons } from '../../db/schema.js'
 
 const perPage = 2
 
@@ -41,6 +41,19 @@ const updateBody = {
 }
 
 export default async function (fastify) {
+    // Возвращает курс по id, проверяя его существование (404) и то,
+    // что текущий пользователь является его автором (403). Автор урока —
+    // это автор курса, к которому урок прикреплён.
+    const assertCourseOwnership = async (courseId, userId) => {
+        const course = await fastify.db.query.courses.findFirst({
+            where: eq(courses.id, courseId),
+        })
+        fastify.assert(course, 404, 'Курс не найден')
+        fastify.assert(course.creatorId === userId, 403, 'Недостаточно прав')
+
+        return course
+    }
+
     // GET /lessons?page=2 — список с пагинацией
     fastify.get(
         '/',
@@ -81,6 +94,9 @@ export default async function (fastify) {
             onRequest: [fastify.authenticate],
         },
         async (request, reply) => {
+            // Создавать урок может только автор курса, к которому он привязан.
+            await assertCourseOwnership(request.body.courseId, request.user.id)
+
             const [lesson] = await fastify.db.insert(courseLessons)
                 .values(request.body)
                 .returning()
@@ -99,14 +115,26 @@ export default async function (fastify) {
         async (request) => {
             const { id } = request.params
 
-            const [lesson] = await fastify.db.update(courseLessons)
+            const lesson = await fastify.db.query.courseLessons.findFirst({
+                where: eq(courseLessons.id, id),
+            })
+            fastify.assert(lesson, 404, 'Урок не найден')
+
+            // Редактировать урок может только автор курса, к которому он привязан.
+            await assertCourseOwnership(lesson.courseId, request.user.id)
+
+            // Если урок переносят в другой курс — этот курс тоже должен
+            // принадлежать текущему пользователю.
+            if (request.body.courseId && request.body.courseId !== lesson.courseId) {
+                await assertCourseOwnership(request.body.courseId, request.user.id)
+            }
+
+            const [updated] = await fastify.db.update(courseLessons)
                 .set(request.body)
                 .where(eq(courseLessons.id, id))
                 .returning()
 
-            fastify.assert(lesson, 404, 'Урок не найден')
-
-            return lesson
+            return updated
         },
     )
 
@@ -120,11 +148,15 @@ export default async function (fastify) {
         async (request, reply) => {
             const { id } = request.params
 
-            const [lesson] = await fastify.db.delete(courseLessons)
-                .where(eq(courseLessons.id, id))
-                .returning()
-
+            const lesson = await fastify.db.query.courseLessons.findFirst({
+                where: eq(courseLessons.id, id),
+            })
             fastify.assert(lesson, 404, 'Урок не найден')
+
+            // Удалять урок может только автор курса, к которому он привязан.
+            await assertCourseOwnership(lesson.courseId, request.user.id)
+
+            await fastify.db.delete(courseLessons).where(eq(courseLessons.id, id))
 
             return reply.code(204).send()
         },

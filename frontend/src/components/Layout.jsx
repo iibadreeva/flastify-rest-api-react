@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
+import { useAuth } from '../auth.jsx'
+import { Initials } from './ui.jsx'
+import AuthModal from './AuthModal.jsx'
 
 const links = [
   { to: '/users', label: 'Участники', index: '01' },
@@ -7,6 +11,9 @@ const links = [
 ]
 
 export default function Layout({ children }) {
+  const { user, logout } = useAuth()
+  const [authOpen, setAuthOpen] = useState(false)
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -35,12 +42,40 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="sidebar__footer">
-          <p>REST API на Fastify + Drizzle</p>
-          <p className="sidebar__muted">Данные генерируются сидами</p>
+          {user ? (
+            <div className="account">
+              <Initials name={user.fullName} />
+              <span className="account__info">
+                <span className="account__name">
+                  {user.fullName ?? 'Без имени'}
+                </span>
+                <span className="account__email">{user.email}</span>
+              </span>
+              <button
+                type="button"
+                className="account__logout"
+                onClick={logout}
+              >
+                Выйти
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--primary account__login"
+              onClick={() => setAuthOpen(true)}
+            >
+              Войти
+            </button>
+          )}
+
+          <p className="sidebar__muted">REST API на Fastify + Drizzle</p>
         </div>
       </aside>
 
       <main className="content">{children}</main>
+
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   )
 }

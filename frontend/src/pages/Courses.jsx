@@ -8,7 +8,6 @@ import FormModal from '../components/FormModal.jsx'
 const courseFields = [
   { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название курса' },
   { name: 'description', label: 'Описание', type: 'textarea', required: true, placeholder: 'Краткое описание курса' },
-  { name: 'creatorId', label: 'ID автора', type: 'number', required: true, placeholder: 'Например, 1' },
 ]
 
 export default function Courses() {
@@ -18,10 +17,10 @@ export default function Courses() {
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async (values) => {
+    // creatorId не отправляем: сервер проставит автора из токена.
     await apiPost('/courses', {
       name: values.name,
       description: values.description,
-      creatorId: values.creatorId === '' ? undefined : Number(values.creatorId),
     })
     window.location.reload()
   }

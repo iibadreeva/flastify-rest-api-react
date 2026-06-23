@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useApi, apiPatch, apiDelete } from '../api.js'
+import { useApi, useAllItems, apiPatch, apiDelete } from '../api.js'
 import { BackLink } from '../components/ui.jsx'
 import { Loader, ErrorState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
-
-const lessonFields = [
-  { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название урока' },
-  { name: 'body', label: 'Содержание', type: 'textarea', required: true, placeholder: 'Текст урока' },
-  { name: 'courseId', label: 'ID курса', type: 'number', required: true, placeholder: 'Например, 1' },
-]
 
 export default function LessonDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data, error, loading } = useApi(`/lessons/${id}`)
+  const courses = useAllItems('/courses')
   const [editing, setEditing] = useState(false)
+
+  const lessonFields = [
+    { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название урока' },
+    { name: 'body', label: 'Содержание', type: 'textarea', required: true, placeholder: 'Текст урока' },
+    {
+      name: 'courseId',
+      label: 'Курс',
+      type: 'select',
+      required: true,
+      options: courses.map((course) => ({
+        value: course.id,
+        label: `№${course.id} — ${course.name}`,
+      })),
+    },
+  ]
 
   const handleEdit = async (values) => {
     await apiPatch(`/lessons/${id}`, {

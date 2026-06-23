@@ -2,13 +2,14 @@ import { asc, eq } from 'drizzle-orm'
 
 import { courses, courseLessons } from '../../db/schema.js'
 
-const perPage = 2
+const perPage = 5
 
 // Допустимые поля курса (используются в схемах create/update).
+// creatorId здесь не указываем: автор проставляется автоматически из токена
+// текущего пользователя и не может быть передан/изменён через тело запроса.
 const courseProperties = {
     name: { type: 'string', minLength: 1 },
     description: { type: 'string', minLength: 1 },
-    creatorId: { type: 'integer', minimum: 1 },
 }
 
 const listQuerystring = {
@@ -28,7 +29,7 @@ const idParams = {
 
 const createBody = {
     type: 'object',
-    required: ['name', 'description', 'creatorId'],
+    required: ['name', 'description'],
     additionalProperties: false,
     properties: courseProperties,
 }
@@ -87,8 +88,9 @@ export default async function (fastify) {
             onRequest: [fastify.authenticate],
         },
         async (request, reply) => {
+            // Автором курса становится текущий авторизованный пользователь.
             const [course] = await fastify.db.insert(courses)
-                .values(request.body)
+                .values({ ...request.body, creatorId: request.user.id })
                 .returning()
 
             return reply.code(201).send(course)
@@ -105,14 +107,19 @@ export default async function (fastify) {
         async (request) => {
             const { id } = request.params
 
-            const [course] = await fastify.db.update(courses)
+            const course = await fastify.db.query.courses.findFirst({
+                where: eq(courses.id, id),
+            })
+            fastify.assert(course, 404, 'Курс не найден')
+            // Редактировать курс может только его автор.
+            fastify.assert(course.creatorId === request.user.id, 403, 'Недостаточно прав')
+
+            const [updated] = await fastify.db.update(courses)
                 .set(request.body)
                 .where(eq(courses.id, id))
                 .returning()
 
-            fastify.assert(course, 404, 'Курс не найден')
-
-            return course
+            return updated
         },
     )
 
@@ -126,11 +133,14 @@ export default async function (fastify) {
         async (request, reply) => {
             const { id } = request.params
 
-            const [course] = await fastify.db.delete(courses)
-                .where(eq(courses.id, id))
-                .returning()
-
+            const course = await fastify.db.query.courses.findFirst({
+                where: eq(courses.id, id),
+            })
             fastify.assert(course, 404, 'Курс не найден')
+            // Удалять курс может только его автор.
+            fastify.assert(course.creatorId === request.user.id, 403, 'Недостаточно прав')
+
+            await fastify.db.delete(courses).where(eq(courses.id, id))
 
             return reply.code(204).send()
         },

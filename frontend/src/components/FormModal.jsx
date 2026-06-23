@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 // Сервер возвращает ошибки в JSON (Fastify). Достаём человекочитаемое сообщение.
 function extractMessage(err) {
@@ -70,7 +71,7 @@ export default function FormModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="modal"
       role="dialog"
@@ -163,6 +164,7 @@ export default function FormModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

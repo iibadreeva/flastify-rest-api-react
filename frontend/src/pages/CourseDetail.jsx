@@ -8,7 +8,6 @@ import FormModal from '../components/FormModal.jsx'
 const courseFields = [
   { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название курса' },
   { name: 'description', label: 'Описание', type: 'textarea', required: true, placeholder: 'Краткое описание курса' },
-  { name: 'creatorId', label: 'ID автора', type: 'number', required: true, placeholder: 'Например, 1' },
 ]
 
 export default function CourseDetail() {
@@ -21,7 +20,6 @@ export default function CourseDetail() {
     await apiPatch(`/courses/${id}`, {
       name: values.name,
       description: values.description,
-      creatorId: values.creatorId === '' ? undefined : Number(values.creatorId),
     })
     window.location.reload()
   }
@@ -103,7 +101,6 @@ export default function CourseDetail() {
         initialValues={{
           name: data.name ?? '',
           description: data.description ?? '',
-          creatorId: data.creatorId ?? '',
         }}
         onClose={() => setEditing(false)}
         onSubmit={handleEdit}

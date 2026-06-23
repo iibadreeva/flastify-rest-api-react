@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useApi, apiPost, apiDelete } from '../api.js'
+import { useApi, useAllItems, apiPost, apiDelete } from '../api.js'
 import { PageHead } from '../components/ui.jsx'
 import { Loader, ErrorState, EmptyState } from '../components/states.jsx'
 import FormModal from '../components/FormModal.jsx'
-
-const lessonFields = [
-  { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название урока' },
-  { name: 'body', label: 'Содержание', type: 'textarea', required: true, placeholder: 'Текст урока' },
-  { name: 'courseId', label: 'ID курса', type: 'number', required: true, placeholder: 'Например, 1' },
-]
 
 export default function Lessons() {
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get('page') || '1', 10)
   const { data, error, loading } = useApi(`/lessons?page=${page}`)
+  const courses = useAllItems('/courses')
   const [creating, setCreating] = useState(false)
+
+  const lessonFields = [
+    { name: 'name', label: 'Название', type: 'text', required: true, placeholder: 'Название урока' },
+    { name: 'body', label: 'Содержание', type: 'textarea', required: true, placeholder: 'Текст урока' },
+    {
+      name: 'courseId',
+      label: 'Курс',
+      type: 'select',
+      required: true,
+      options: courses.map((course) => ({
+        value: course.id,
+        label: `№${course.id} — ${course.name}`,
+      })),
+    },
+  ]
 
   const handleCreate = async (values) => {
     await apiPost('/lessons', {
